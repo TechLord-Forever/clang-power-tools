@@ -71,17 +71,31 @@ namespace ClangPowerTools
       mOutputManager.AddMessage($"\n{OutputWindowConstants.kStart} {aCommandName}\n");
       foreach (var item in mItemsCollector.GetItems)
       {
-        var script = mScriptBuilder.GetScript(item, solutionPath);
-        if (!mCommandsController.Running)
-          break;
-
-        var process = mPowerShell.Invoke(script);
-        mRunningProcesses.Add(process);
-
-        if (mOutputManager.MissingLlvm)
+        var blub = $"GetName: {item.GetName()}, ToString: {item.ToString()}, GetPath: {item.GetPath()}, GetType: {item.GetType().FullName}";
+        if(item is SelectedProject sp)
+        { 
+          var pro = (sp.GetObject() as EnvDTE.Project);
+          blub += $", Kind: {pro.Kind} FileName: {pro.FileName} FullName: {pro.FullName} IsDirty: {pro.IsDirty} Name: {pro.Name} ParentProjectItem: {pro.ParentProjectItem} UniqueName: {pro.UniqueName}";
+        }
+        mOutputManager.AddMessage(blub);
+        try
         {
-          mOutputManager.AddMessage(ErrorParserConstants.kMissingLlvmMessage);
-          break;
+          var script = mScriptBuilder.GetScript(item, solutionPath);
+          if (!mCommandsController.Running)
+            break;
+
+          var process = mPowerShell.Invoke(script);
+          mRunningProcesses.Add(process);
+
+          if (mOutputManager.MissingLlvm)
+          {
+            mOutputManager.AddMessage(ErrorParserConstants.kMissingLlvmMessage);
+            break;
+          }
+        }
+        catch(Exception ex)
+        {
+          mOutputManager.AddMessage($"{ex}, {ex.Message}");
         }
       }
       if (!mOutputManager.EmptyBuffer)
